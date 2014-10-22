@@ -7,7 +7,7 @@
 ;;------------------------------------------------------------------------------
 ;; Old-style color theming support (via color-theme.el)
 ;;------------------------------------------------------------------------------
-(defcustom window-system-color-theme 'color-theme-sanityinc-solarized-dark
+(defcustom window-system-color-theme 'color-theme-sanityinc-solarized-light
   "Color theme to use in window-system frames.
 If Emacs' native theme support is available, this setting is
 ignored: use `custom-enabled-themes' instead."
@@ -64,12 +64,33 @@ ignored: use `custom-enabled-themes' instead."
 (defun light ()
   "Activate a light color theme."
   (interactive)
-  (color-theme-sanityinc-solarized-light))
+  (color-theme-sanityinc-solarized-light)
+  (sp/window-system-frame-set-theme-style-all))
 
 (defun dark ()
   "Activate a dark color theme."
   (interactive)
-  (color-theme-sanityinc-solarized-dark))
+  (color-theme-sanityinc-solarized-dark)
+  (sp/window-system-frame-set-theme-style-all))
 
+;; Set header dark for dark color theme
+(defun sp/window-system-frame-set-style (current-frame style)
+  (if (window-system)
+      (let ((frame-window-id (cdr (assoc 'outer-window-id (frame-parameters current-frame)))))
+        (call-process-shell-command (concat "xprop -f _GTK_THEME_VARIANT 8u -set _GTK_THEME_VARIANT \"" style "\" -id \""
+                                            frame-window-id
+                                            "\"")))))
+
+(defun sp/window-system-frame-set-theme-style (current-frame)
+  (if (equal custom-enabled-themes '(sanityinc-solarized-dark))
+      (sp/window-system-frame-set-style current-frame "dark")
+    (sp/window-system-frame-set-style current-frame "light")))
+
+(defun sp/window-system-frame-set-theme-style-all ()
+    (dolist (frame (frame-list))
+      (sp/window-system-frame-set-theme-style frame)))
+
+(add-hook 'after-init-hook 'sp/window-system-frame-set-theme-style-all)
+(add-hook 'after-make-frame-functions 'sp/window-system-frame-set-theme-style)
 
 (provide 'init-themes)

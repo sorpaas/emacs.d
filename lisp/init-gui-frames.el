@@ -68,5 +68,6 @@
           (lambda ()
             (setq line-spacing 0)))
 
+(menu-bar-mode -1)
 
 (provide 'init-gui-frames)
