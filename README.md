@@ -1,4 +1,4 @@
-# A reasonable Emacs config
+# sorpa'as Emacs config
 
 This is my emacs configuration tree, continually used and tweaked
 since 2000, and it may be a good starting point for other Emacs
