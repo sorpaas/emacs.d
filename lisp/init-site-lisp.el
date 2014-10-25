@@ -12,6 +12,7 @@
                    collecting (expand-file-name dir))
              load-path)))))
 
+(add-to-list 'load-path (expand-file-name "site-lisp" user-emacs-directory))
 (sanityinc/add-subdirs-to-load-path
  (expand-file-name "site-lisp/" user-emacs-directory))
 

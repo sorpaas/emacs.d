@@ -11,6 +11,8 @@
 
 ;; Various preferences
 (setq org-log-done t
+      org-startup-indented t
+      org-fast-tag-selection-single-key (quote expert)
       org-completion-use-ido t
       org-edit-timestamp-down-means-later t
       org-agenda-start-on-weekday nil
@@ -28,6 +30,23 @@
       org-directory "~/org"
       org-agenda-files "~/org/agenda-files")
 
+(add-hook 'org-mode-hook 'turn-on-auto-fill)
+
+; Enables the given minor mode for the current buffer it it matches regex
+; my-pair is a cons cell (regular-expression . minor-mode)
+(defun enable-minor-mode (my-pair)
+  (if (buffer-file-name) ; If we are visiting a file,
+      ; and the filename matches our regular expression,
+      (if (string-match (car my-pair) buffer-file-name)
+      (funcall (cdr my-pair))))) ; enable the minor mode
+
+(add-hook 'org-mode-hook
+          (lambda () (enable-minor-mode '("\\(facebook\\|google\\)_cal\\.\\(org\\|org_archive\\)$" . auto-revert-mode))))
+(add-hook 'org-mode-hook
+          (lambda () (enable-minor-mode '("/home/sorpaas/org/inbox\\.org" . auto-revert-mode))))
+
+(define-key global-map "\C-cl" 'org-store-link)
+(define-key global-map "\C-cb" 'org-iswitchb)
 
 ; Refile targets include this file and any file contributing to the agenda - up to 5 levels deep
 (setq org-refile-targets (quote ((nil :maxlevel . 5) (org-agenda-files :maxlevel . 5))))
@@ -43,14 +62,14 @@
               (sequence "CHECKPOINT(c)" "|" "DONE(d)"))))
 
 (setq org-todo-keyword-faces
-      (quote (("TODO" :foreground "black" :background "red" :weight bold)
-              ("NEXT" :foreground "black" :background "blue" :weight bold)
-              ("DONE" :foreground "black" :background "forest green" :weight bold)
-              ("CHECKPOINT" :foreground "black" :background "yellow" :weight bold)
-              ("WAITING" :foreground "black" :background "orange" :weight bold)
-              ("HOLD" :foreground "black" :background "magenta" :weight bold)
-              ("CANCELLED" :foreground "black" :background "forest green" :weight bold)
-              ("SUB" :foreground "black" :background "forest green" :weight bold))))
+      (quote (("TODO" :foreground "black" :background "burlywood" :weight bold)
+              ("NEXT" :foreground "black" :background "LightSkyBlue1" :weight bold)
+              ("DONE" :foreground "black" :background "SpringGreen1" :weight bold)
+              ("CHECKPOINT" :foreground "black" :background "yellow1" :weight bold)
+              ("WAITING" :foreground "black" :background "gold1" :weight bold)
+              ("HOLD" :foreground "black" :background "pink1" :weight bold)
+              ("CANCELLED" :foreground "black" :background "SpringGreen1" :weight bold)
+              ("SUB" :foreground "black" :background "SpringGreen1" :weight bold))))
 
 ;;; - Org: Tag
 ; Tags with fast selection keys
@@ -75,6 +94,34 @@
 
 ; Allow setting single tags without the menu
 (setq org-fast-tag-selection-single-key (quote expert))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Org capture
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(setq org-default-notes-file "~/org/notes.org")
+(define-key global-map [(control meta ?r)] 'org-capture)
+;; Capture templates for: TODO tasks, Notes, appointments, phone calls, meetings, and org-protocol
+(setq org-capture-templates
+      (quote (("t" "Todo" entry (file "~/org/inbox.org")
+               "* TODO %?\n%U\n%a\n" :clock-in t :clock-resume t)
+              ("c" "Checkpoint" entry (file "~/org/inbox.org")
+               "* CHECKPOINT %?\n")
+              ("l" "Just Link TODO" entry (file "~/org/inbox.org")
+               "* TODO %a%?\n%U\n%a\n")
+              ("r" "Respond" entry (file "~/org/inbox.org")
+               "* NEXT Respond to %:from on %:subject\nSCHEDULED: %t\n%U\n%a\n" :clock-in t :clock-resume t :immediate-finish t)
+              ("n" "Note" entry (file "~/org/inbox.org")
+               "* %? :NOTE:\n%U\n%a\n" :clock-in t :clock-resume t)
+              ("j" "Journal" entry (file+datetree "~/org/journal.org")
+               "* %?\n%U\n" :clock-in t :clock-resume t)
+              ("d" "Daily Big Thing Project Collection" plain (file+datetree "~/org/project-dailybigthing.org")
+               "")
+              ("e" "Essays" entry (file+datetree "~/org/essays.org")
+               "* %?")
+              ("w" "Org-protocol" entry (file "~/org/inbox.org")
+               "* TODO Review %c\n%U\n" :immediate-finish t)
+              ("h" "Habit" entry (file "~/org/inbox.org")
+               "* NEXT %?\n%U\n%a\nSCHEDULED: %(format-time-string \"<%Y-%m-%d %a .+1d/3d>\")\n:PROPERTIES:\n:STYLE: habit\n:REPEAT_TO_STATE: NEXT\n:END:\n"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Org agenda
