@@ -36,6 +36,7 @@
 (require-package 'scratch)
 (require-package 'mwe-log-commands)
 
+(require 'init-autosave-backup)
 (require 'init-frame-hooks)
 (require 'init-xterm)
 (require 'init-themes)

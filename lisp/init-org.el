@@ -57,19 +57,19 @@
 
 ;;; - Org: TODO Keywords
 (setq org-todo-keywords
-      (quote ((sequence "TODO(t)" "NEXT(n)" "WAITING(w@/!)" "|" "DONE(d)")
+      (quote ((sequence "TODO(t)" "NEXT(n)" "WAITING(w@/!)" "STARTED" "|" "DONE(d)")
               (sequence "HOLD(h@/!)" "|" "CANCELLED(c@/!)" "SUB(s)")
               (sequence "CHECKPOINT(c)" "|" "DONE(d)"))))
 
 (setq org-todo-keyword-faces
       (quote (("TODO" :foreground "black" :background "burlywood" :weight bold)
-              ("NEXT" :foreground "black" :background "LightSkyBlue1" :weight bold)
               ("DONE" :foreground "black" :background "SpringGreen1" :weight bold)
               ("CHECKPOINT" :foreground "black" :background "yellow1" :weight bold)
               ("WAITING" :foreground "black" :background "gold1" :weight bold)
               ("HOLD" :foreground "black" :background "pink1" :weight bold)
               ("CANCELLED" :foreground "black" :background "SpringGreen1" :weight bold)
-              ("SUB" :foreground "black" :background "SpringGreen1" :weight bold))))
+              ("SUB" :foreground "black" :background "SpringGreen1" :weight bold)
+              ("STARTED" :foreground "black" :background "LightSkyBlue1"))))
 
 ;;; - Org: Tag
 ; Tags with fast selection keys
@@ -87,7 +87,8 @@
                             ("meta" . ?s)
                             ("research" . ?r)
                             ("need_deadline")
-                            ("info" . ?i))))
+                            ("info" . ?i)
+                            ("@outdoor" . ?o))))
 
 ; Inheritance Settings
 (setq org-tags-exclude-from-inheritance '("PROJECT" "HOLD" "CANCELED" "DONE" "list"))
@@ -113,6 +114,8 @@
               ("n" "Note" entry (file "~/org/inbox.org")
                "* %? :NOTE:\n%U\n%a\n" :clock-in t :clock-resume t)
               ("j" "Journal" entry (file+datetree "~/org/journal.org")
+               "* %?\n%U\n" :clock-in t :clock-resume t)
+              ("N" "Serious Notes" entry (file+datetree "~/org/notes.org")
                "* %?\n%U\n" :clock-in t :clock-resume t)
               ("d" "Daily Big Thing Project Collection" plain (file+datetree "~/org/project-dailybigthing.org")
                "")
@@ -286,15 +289,8 @@ If OTHERS is true, skip all entries that do not correspond to TAG."
       ("d" "Today's plan"
        ((agenda "" ((org-agenda-ndays 2)
                     ))
-        (todo "NEXT" ((org-agenda-overriding-header "Next Planned Tasks")
-                      ))
         (todo "TODO" ((org-agenda-overriding-header "Unscheduled Tasks")
                       (org-agenda-todo-ignore-scheduled t)))
-        (agenda "" ((org-agenda-overriding-header "Upcoming Deadlines")
-                    (org-agenda-ndays 1)
-                    (org-agenda-entry-types '(:deadline))
-                    (org-deadline-warning-days 7)
-                    (org-agenda-time-grid nil)))
         (todo "WAITING" ((org-agenda-overriding-header "Waiting Tasks")
                          ))
         (tags "REFILE"
@@ -304,15 +300,42 @@ If OTHERS is true, skip all entries that do not correspond to TAG."
                ((org-agenda-overriding-header "Stuck Projects")
                 (org-agenda-prefix-format " %t %s")
                 (org-agenda-sorting-strategy '(alpha-up))))
-        (tags "+PROJECT+meta"
-              ((org-agenda-overriding-header "Meta Projects")
-               (org-agenda-prefix-format " %t %s")
-               (org-agenda-sorting-strategy '(alpha-up))))
-        (tags "+PROJECT-meta/-HOLD-CANCELED-DONE"
+        (tags "+PROJECT/-HOLD-CANCELED-DONE"
               ((org-agenda-overriding-header "All Other Projects")
                (org-agenda-prefix-format " %t %s")
                (org-agenda-sorting-strategy '(alpha-up))))))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Org refine
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Targets include this file and any file contributing to the agenda - up to 9 levels deep
+(setq org-refile-targets (quote ((nil :maxlevel . 9)
+                                 (org-agenda-files :maxlevel . 9))))
+
+; Use full outline paths for refile targets - we file directly with IDO
+(setq org-refile-use-outline-path t)
+
+; Targets complete directly with IDO
+(setq org-outline-path-complete-in-steps nil)
+
+(setq ido-max-directory-size 100000)
+
+; Allow refile to create parent tasks with confirmation
+(setq org-refile-allow-creating-parent-nodes (quote confirm))
+
+; Use the current window for indirect buffer display
+(setq org-indirect-buffer-display 'current-window)
+
+;;;; Refile settings
+; Exclude DONE state tasks from refile targets
+(defun bh/verify-refile-target ()
+  "Exclude todo keywords with a done state from refile targets"
+  (and
+   (not (member "ARCHIVE" (org-get-tags)))
+   (not (member (nth 2 (org-heading-components)) org-done-keywords))))
+
+(setq org-refile-target-verify-function 'bh/verify-refile-target)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Org clock
@@ -323,8 +346,6 @@ If OTHERS is true, skip all entries that do not correspond to TAG."
 (setq org-clock-persist t)
 (setq org-clock-in-resume t)
 
-;; Change task state to STARTED when clocking in
-(setq org-clock-in-switch-to-state "STARTED")
 ;; Save clock data and notes in the LOGBOOK drawer
 (setq org-clock-into-drawer t)
 ;; Removes clocked tasks with 0:00 duration
